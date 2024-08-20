@@ -175,7 +175,7 @@ function Index() {
                                 <div className="col">
                                     {/* Card */}
                                     <div className="card card-hover">
-                                        <Link to={`/course-detail/slug/`}>
+                                        <Link to={`/course-detail/${c.slug}/`}>
                                             <img
                                                 src={c.image}
                                                 alt="course"
