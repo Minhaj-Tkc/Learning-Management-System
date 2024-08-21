@@ -19,7 +19,11 @@ function ForgotPassword() {
       await apiInstance.get(`user/password-reset/${email}/`).then((res) => {
         console.log(res.data);
         setIsLoading(false);
-        alert("Password Reset Email Sent");
+        Navigate("/login/")
+        Toast().fire({
+          title: "Password Reset Email Sent",
+          icon: "success",
+        });
       });
     } catch (error) {
       console.log("error: ", error);

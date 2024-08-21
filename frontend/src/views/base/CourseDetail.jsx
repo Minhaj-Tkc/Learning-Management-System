@@ -1,20 +1,31 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Link, useParams } from "react-router-dom";
 import moment from "moment";
+import Swal from "sweetalert2";
 
 import BaseHeader from "../partials/BaseHeader";
 import BaseFooter from "../partials/BaseFooter";
 
 import useAxios from "../../utils/useAxios";
+import CartId from "../plugin/CartId";
+import GetCurrentAddress from "../plugin/UserCountry";
+import UserData from "../plugin/UserData";
+import Toast from "../plugin/Toast";
+import { CartContext } from "../plugin/Context";
+import apiInstance from "../../utils/axios";
 
 function CourseDetail() {
   const [course, setCourse] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [addToCartBtn, setAddToCartBtn] = useState("Add To Cart");
-//   const [cartCount, setCartCount] = useContext(CartContext);
+  const [cartCount, setCartCount] = useContext(CartContext);
 
   const param = useParams();
-
+  
+  const country = GetCurrentAddress().country;
+  const userId = UserData().user_id;
+  console.log();
+  
   const fetchCourse = () => {
     useAxios()
       .get(`course/course-detail/${param.slug}/`)
@@ -45,15 +56,17 @@ function CourseDetail() {
         .then((res) => {
           console.log(res.data);
           setAddToCartBtn("Added To Cart");
-        //   Toast().fire({
-        //     title: "Added To Cart",
-        //     icon: "success",
-        //   });
+
+          Toast().fire({
+            title: "Added To Cart",
+            icon: "success",
+          });
 
           // Set cart count after adding to cart
-        //   apiInstance.get(`course/cart-list/${CartId()}/`).then((res) => {
-        //     setCartCount(res.data?.length);
-        //   });
+          apiInstance.get(`course/cart-list/${CartId()}/`).then((res) => {
+            console.log("hello")
+            setCartCount(res.data?.length);
+          });
         });
     } catch (error) {
       console.log(error);
@@ -1323,10 +1336,10 @@ function CourseDetail() {
                                   onClick={() =>
                                     addToCart(
                                       course?.id,
-                                      1,
+                                      userId,
                                       course.price,
-                                      "India",
-                                      "523626"
+                                      country,
+                                      CartId()
                                     )
                                   }
                                 >
@@ -1342,10 +1355,10 @@ function CourseDetail() {
                                   onClick={() =>
                                     addToCart(
                                       course?.id,
-                                      1,
+                                      userId,
                                       course.price,
-                                      "India",
-                                      "523626"
+                                      country,
+                                      CartId()
                                     )
                                   }
                                 >
@@ -1354,17 +1367,17 @@ function CourseDetail() {
                                 </button>
                               )}
 
-                            {addToCartBtn === "Add To Cart" && (
+                            {addToCartBtn === "Adding To Cart" && (
                                 <button
                                   type="button"
                                   className="btn btn-primary mb-0 w-100 me-2"
                                   onClick={() =>
                                     addToCart(
                                       course.id,
-                                      1,
+                                      userId,
                                       course.price,
-                                      "India",
-                                      "523626"
+                                      country,
+                                      CartId()
                                     )
                                   }
                                 >

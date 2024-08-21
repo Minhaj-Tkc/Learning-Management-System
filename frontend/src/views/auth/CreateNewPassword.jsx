@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import apiInstance from "../../utils/axios";
+import Toast from "../plugin/Toast";
 
 import React from 'react'
 import BaseHeader from '../partials/BaseHeader'
@@ -26,7 +27,11 @@ function CreateNewPassword() {
     e.preventDefault();
     setIsLoading(true);
     if (confirmPassword !== password){
-      alert("Password does not match");
+      Toast().fire({
+        title: "Password does not match",
+        icon: "warning",
+      });
+
       setIsLoading(false);
       return;
     } else {
@@ -41,7 +46,10 @@ function CreateNewPassword() {
           console.log(res.data);
           setIsLoading(false);
           navigate("/login/")
-          alert(res.data.message);
+          Toast().fire({
+            icon: "warning",
+            title: res.data.message,
+          });
         })
       } catch (error) {
         console.log(error)

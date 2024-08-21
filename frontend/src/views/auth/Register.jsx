@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
+import Toast from "../plugin/Toast";
 import apiInstance from "../../utils/axios";
 import { register } from "../../utils/auth";
 import BaseHeader from '../partials/BaseHeader'
@@ -28,7 +28,10 @@ function Register() {
       setIsLoading(false);
     } else {
       navigate("/");
-      alert("Registration Successfull, you have now been logged in");
+      Toast().fire({
+        title: "Registration Successfull, you have now been logged in",
+        icon: "success",
+      });
       setIsLoading(false);
     }
   };
