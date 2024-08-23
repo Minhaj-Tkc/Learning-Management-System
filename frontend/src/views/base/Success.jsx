@@ -44,7 +44,7 @@ function Success() {
     <>
       <BaseHeader />
 
-      <section className="pt-0  position-relative overflow-hidden my-auto">
+      <section className="pt-0  position-relative overflow-hidden my-auto" style={{ minHeight: "80vh", display: "flex", alignItems: "center" }}>
         <div className="container position-relative">
           <div className="row g-5 align-items-center justify-content-center">
             {/* Payment Successfull */}
