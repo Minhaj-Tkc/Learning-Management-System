@@ -17,9 +17,9 @@ import Checkout from "./views/base/Checkout";
 import Success from "./views/base/Success";
 import Search from "./views/base/Search";
 
-// import StudentDashboard from "./views/student/Dashboard";
-// import StudentCourses from "./views/student/Courses";
-// import StudentCourseDetail from "./views/student/CourseDetail";
+import StudentDashboard from "./views/student/Dashboard";
+import StudentCourses from "./views/student/Courses";
+import StudentCourseDetail from "./views/student/CourseDetail";
 // import Wishlist from "./views/student/Wishlist";
 // import StudentProfile from "./views/student/Profile";
 // import StudentChangePassword from "./views/student/ChangePassword";
@@ -68,7 +68,7 @@ function App() {
             <Route path="/search/" element={<Search />} />
 
              {/* Student Routes */}
-             {/* <Route
+             <Route
                 path="/student/dashboard/"
                 element={<StudentDashboard />}
               />
@@ -77,7 +77,7 @@ function App() {
                 path="/student/courses/:enrollment_id/"
                 element={<StudentCourseDetail />}
               />
-              <Route path="/student/wishlist/" element={<Wishlist />} />
+              {/* <Route path="/student/wishlist/" element={<Wishlist />} />
               <Route path="/student/profile/" element={<StudentProfile />} />
               <Route
                 path="/student/change-password/"
