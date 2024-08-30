@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams } from "react-router-dom";
 import BaseHeader from '../partials/BaseHeader'
 import BaseFooter from '../partials/BaseFooter'
 import Sidebar from './Partials/Sidebar'
 import Header from './Partials/Header'
+
+import Toast from "../plugin/Toast";
+import moment from "moment";
 
 import ReactPlayer from 'react-player'
 import useAxios from "../../utils/useAxios";
@@ -15,7 +18,11 @@ import Modal from 'react-bootstrap/Modal';
 function CourseDetail() {
   const [course, setCourse] = useState([]);
   const param = useParams();
-  console.log(param.enrollment_id);
+
+  const lastElementRef = useRef();
+
+  // console.log(param.enrollment_id);
+   
   const [variantItem, setVariantItem] = useState(null);
 
   const [show, setShow] = useState(false);
@@ -27,19 +34,37 @@ function CourseDetail() {
 
   const [noteShow, setNoteShow] = useState(false);
   const handleNoteClose = () => setNoteShow(false);
-  const handleNoteShow = () => { setNoteShow(true); }
+  const handleNoteShow = (note) => {
+    setNoteShow(true);
+    setSelectedNote(note);
+  };
 
   const [ConversationShow, setConversationShow] = useState(false);
   const handleConversationClose = () => setConversationShow(false);
-  const handleConversationShow = () => { setConversationShow(true); }
+  const handleConversationShow = (converation) => {
+    setConversationShow(true);
+    setSelectedConversation(converation);
+  };
 
   
-  // const [completionPercentage, setCompletionPercentage] = useState(0);
-  // const [markAsCompletedStatus, setMarkAsCompletedStatus] = useState({});
-  // const [createNote, setCreateNote] = useState({ title: "", note: "" });
-  // const [selectedNote, setSelectedNote] = useState(null);
+  const [completionPercentage, setCompletionPercentage] = useState(0);
+  const [markAsCompletedStatus, setMarkAsCompletedStatus] = useState({});
+  const [createNote, setCreateNote] = useState({ title: "", note: "" });
+  const [selectedNote, setSelectedNote] = useState(null);
+  const [createMessage, setCreateMessage] = useState({
+    title: "",
+    message: "",
+  });
 
+  const [questions, setQuestions] = useState([]);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  // const [createReview, setCreateReview] = useState({ rating: 1, review: "" });
+  // const [studentReview, setStudentReview] = useState([]);
   
+
+  const [addQuestionShow, setAddQuestionShow] = useState(false);
+  const handleQuestionClose = () => setAddQuestionShow(false);
+  const handleQuestionShow = () => setAddQuestionShow(true);
 
   const fetchCourseDetail = async () => {
     useAxios()
@@ -48,13 +73,181 @@ function CourseDetail() {
       )
       .then((res) => {
         setCourse(res.data);
-        console.log(res.data);
+        setQuestions(res.data.question_answer);
+        const percentageCompleted = (res.data.completed_lesson?.length / res.data.lectures?.length) * 100;
+        setCompletionPercentage(percentageCompleted?.toFixed(0));
         
       });
   };
+
   useEffect(() => {
     fetchCourseDetail();
   }, []);
+
+  const handleMarkLessonAsCompleted = (variantItemId) => {
+    const key = `lecture_${variantItemId}`;
+    setMarkAsCompletedStatus({
+      ...markAsCompletedStatus,
+      [key]: "Updating",
+    });
+
+    const formdata = new FormData();
+    formdata.append("user_id", UserData()?.user_id || 0);
+    formdata.append("course_id", course.course?.id);
+    formdata.append("variant_item_id", variantItemId);
+
+
+    useAxios()
+      .post(`student/course-completed/`, formdata)
+      .then((res) => {
+        fetchCourseDetail();
+        setMarkAsCompletedStatus({
+          ...markAsCompletedStatus,
+          [key]: "Updated",
+        });
+      });
+  };
+
+  const handleNoteChange = (event) => {
+    setCreateNote({
+      ...createNote,
+      [event.target.name]: event.target.value,
+    });
+  };
+
+
+  const handleSubmitCreateNote = async (e) => {
+    e.preventDefault();
+    const formdata = new FormData();
+
+    formdata.append("user_id", UserData()?.user_id);
+    formdata.append("enrollment_id", param.enrollment_id);
+    formdata.append("title", createNote.title);
+    formdata.append("note", createNote.note);
+
+
+    try {
+      await useAxios()
+        .post(
+          `student/course-note/${UserData()?.user_id}/${param.enrollment_id}/`,
+          formdata
+        )
+        .then((res) => {
+          fetchCourseDetail();
+          handleNoteClose();
+          Toast().fire({
+            icon: "success",
+            title: "Note created",
+          });
+        });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
+  const handleSubmitEditNote = (e, noteId) => {
+    e.preventDefault();
+    const formdata = new FormData();
+
+    formdata.append("user_id", UserData()?.user_id);
+    formdata.append("enrollment_id", param.enrollment_id);
+    formdata.append("title", createNote.title || selectedNote?.title);
+    formdata.append("note", createNote.note || selectedNote?.note);
+
+    useAxios()
+      .patch(
+        `student/course-note-detail/${UserData()?.user_id}/${param.enrollment_id}/${noteId}/`,
+        formdata
+      )
+      .then((res) => {
+        fetchCourseDetail();
+        Toast().fire({
+          icon: "success",
+          title: "Note updated",
+        });
+      });
+  };
+
+
+  const handleDeleteNote = (noteId) => {
+    useAxios()
+      .delete(
+        `student/course-note-detail/${UserData()?.user_id}/${param.enrollment_id}/${noteId}/`
+      )
+      .then((res) => {
+        fetchCourseDetail();
+        Toast().fire({
+          icon: "success",
+          title: "Note deleted",
+        });
+      });
+  };
+
+  const handleMessageChange = (event) => {
+    setCreateMessage({
+      ...createMessage,
+      [event.target.name]: event.target.value,
+    });
+  };
+
+  const handleSaveQuestion = async (e) => {
+    e.preventDefault();
+    const formdata = new FormData();
+
+    formdata.append("course_id", course.course?.id);
+    formdata.append("user_id", UserData()?.user_id);
+    formdata.append("title", createMessage.title);
+    formdata.append("message", createMessage.message);
+
+    await useAxios()
+      .post(
+        `student/question-answer-list-create/${course.course?.id}/`,
+        formdata
+      )
+      .then((res) => {
+        fetchCourseDetail();
+        handleQuestionClose();
+        Toast().fire({
+          icon: "success",
+          title: "Question sent",
+        });
+      });
+  };
+
+  const sendNewMessage = async (e) => {
+    e.preventDefault();
+    const formdata = new FormData();
+    formdata.append("course_id", course.course?.id);
+    formdata.append("user_id", UserData()?.user_id);
+    formdata.append("message", createMessage.message);
+    formdata.append("qa_id", selectedConversation?.qa_id);
+
+    useAxios()
+      .post(`student/question-answer-message-create/`, formdata)
+      .then((res) => {
+        setSelectedConversation(res.data.question);
+      });
+  };
+
+  useEffect(() => {
+    if (lastElementRef.current) {
+      lastElementRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [selectedConversation]);
+
+  const handleSearchQuestion = (event) => {
+    const query = event.target.value.toLowerCase();
+    if (query === "") {
+      fetchCourseDetail();
+    } else {
+      const filtered = questions?.filter((question) => {
+        return question.title.toLowerCase().includes(query);
+      });
+      setQuestions(filtered);
+    }
+  };
+
 
   return (
     <>
@@ -160,12 +353,12 @@ function CourseDetail() {
                                   <div
                                     className="progress-bar"
                                     role="progressbar"
-                                    style={{ width: `${25}%` }}
-                                    aria-valuenow={25}
+                                    style={{ width: `${completionPercentage}%` }}
+                                    aria-valuenow={completionPercentage}
                                     aria-valuemin={0}
                                     aria-valuemax={100}
                                   >
-                                    25%
+                                    {completionPercentage}%
                                   </div>
                                 </div>
                                 {/* Item */}
@@ -274,18 +467,18 @@ function CourseDetail() {
                                             <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" />
                                           </div>
                                           <div className="modal-body">
-                                            <form>
+                                            <form onSubmit={handleSubmitCreateNote}>
                                               <div className="mb-3">
                                                 <label htmlFor="exampleInputEmail1" className="form-label">
                                                   Note Title
                                                 </label>
-                                                <input type="text" className="form-control" />
+                                                <input type="text" className="form-control" name='title' onChange={handleNoteChange} />
                                               </div>
                                               <div className="mb-3">
                                                 <label htmlFor="exampleInputPassword1" className="form-label">
                                                   Note Content
                                                 </label>
-                                                <textarea className='form-control' name="" id="" cols="30" rows="10"></textarea>
+                                                <textarea className='form-control' name='note' onChange={handleNoteChange} id="" cols="30" rows="10"></textarea>
                                               </div>
                                               <button type="button" className="btn btn-secondary me-2" data-bs-dismiss="modal" ><i className='fas fa-arrow-left'></i> Close</button>
                                               <button type="submit" className="btn btn-primary">Save Note <i className='fas fa-check-circle'></i></button>
@@ -297,32 +490,40 @@ function CourseDetail() {
                                   </div>
                                 </div>
                                 <div className="card-body p-0 pt-3">
+
                                   {/* Note item start */}
-                                  <div className="row g-4 p-3">
-                                    <div className="col-sm-11 col-xl-11 shadow p-3 m-3 rounded">
-                                      <h5> What is Digital Marketing What is Digital Marketing</h5>
-                                      <p>
-                                        Arranging rapturous did believe him all had supported.
-                                        Supposing so be resolving breakfast am or perfectly.
-                                        It drew a hill from me. Valley by oh twenty direct me
-                                        so. Departure defective arranging rapturous did
-                                        believe him all had supported. Family months lasted
-                                        simple set nature vulgar him. Picture for attempt joy
-                                        excited ten carried manners talking how. Family months
-                                        lasted simple set nature vulgar him. Picture for
-                                        attempt joy excited ten carried manners talking how.
-                                      </p>
-                                      {/* Buttons */}
-                                      <div className="hstack gap-3 flex-wrap">
-                                        <a onClick={handleNoteShow} className="btn btn-success mb-0">
-                                          <i className="bi bi-pencil-square me-2" /> Edit
-                                        </a>
-                                        <a href="#" className="btn btn-danger mb-0">
-                                          <i className="bi bi-trash me-2" /> Delete
-                                        </a>
+
+                                  {course?.note?.map((n, index) => (
+                                    <div className="row g-4 p-3">
+                                      <div className="col-sm-11 col-xl-11 shadow p-3 m-3 rounded">
+                                        <h5> {n.title}</h5>
+                                        <p>{n.note}</p>
+                                        {/* Buttons */}
+                                        <div className="hstack gap-3 flex-wrap">
+                                          <a
+                                            onClick={() => handleNoteShow(n)}
+                                            className="btn btn-success mb-0"
+                                          >
+                                            <i className="bi bi-pencil-square me-2" />{" "}
+                                            Edit
+                                          </a>
+                                          <a
+                                            onClick={() =>
+                                              handleDeleteNote(n.id)
+                                            }
+                                            className="btn btn-danger mb-0"
+                                          >
+                                            <i className="bi bi-trash me-2" />{" "}
+                                            Delete
+                                          </a>
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
+                                  ))}
+
+                                  {course?.note?.length < 1 && (
+                                    <p className="mt-3 p-3">No notes</p>
+                                  )}
                                   <hr />
                                 </div>
                               </div>
@@ -342,7 +543,7 @@ function CourseDetail() {
                                     {/* Search */}
                                     <div className="col-sm-6 col-lg-9">
                                       <div className="position-relative">
-                                        <input className="form-control pe-5 bg-transparent" type="search" placeholder="Search" aria-label="Search" />
+                                        <input className="form-control pe-5 bg-transparent" type="search" placeholder="Search" aria-label="Search" onChange={handleSearchQuestion} />
                                         <button className="bg-transparent p-2 position-absolute top-50 end-0 translate-middle-y border-0 text-primary-hover text-reset" type="submit">
                                           <i className="fas fa-search fs-6 " />
                                         </button>
@@ -350,7 +551,7 @@ function CourseDetail() {
                                     </div>
                                     <div className="col-sm-6 col-lg-3">
                                       <a
-                                        href="#"
+                                        onClick={handleQuestionShow}
                                         className="btn btn-primary mb-0 w-100"
                                         data-bs-toggle="modal"
                                         data-bs-target="#modalCreatePost"
@@ -364,28 +565,55 @@ function CourseDetail() {
                                 <div className="card-body p-0 pt-3">
                                   <div className="vstack gap-3 p-3">
                                     {/* Question item START */}
-                                    <div className="shadow rounded-3 p-3">
-                                      <div className="d-sm-flex justify-content-sm-between mb-3">
-                                        <div className="d-flex align-items-center">
-                                          <div className="avatar avatar-sm flex-shrink-0">
-                                            <img
-                                              src="https://geeksui.codescandy.com/geeks/assets/images/avatar/avatar-3.jpg"
-                                              className="avatar-img rounded-circle"
-                                              alt="avatar"
-                                              style={{ width: "60px", height: "60px", borderRadius: "50%", objectFit: "cover" }}
-                                            />
-                                          </div>
-                                          <div className="ms-2">
-                                            <h6 className="mb-0">
-                                              <a href="#" className='text-decoration-none text-dark'>Angelina Poi</a>
-                                            </h6>
-                                            <small>Asked 10 Hours ago</small>
+                                    {questions?.map((q, index) => (
+                                      <div
+                                        className="shadow rounded-3 p-3"
+                                        key={index}
+                                      >
+                                        <div className="d-sm-flex justify-content-sm-between mb-3">
+                                          <div className="d-flex align-items-center">
+                                            <div className="avatar avatar-sm flex-shrink-0">
+                                              <img
+                                                src={q.profile.image}
+                                                className="avatar-img rounded-circle"
+                                                alt="avatar"
+                                                style={{
+                                                  width: "60px",
+                                                  height: "60px",
+                                                  borderRadius: "50%",
+                                                  objectFit: "cover",
+                                                }}
+                                              />
+                                            </div>
+                                            <div className="ms-2">
+                                              <h6 className="mb-0">
+                                                <a
+                                                  href="#"
+                                                  className="text-decoration-none text-dark"
+                                                >
+                                                  {q.profile.full_name}
+                                                </a>
+                                              </h6>
+                                              <small>
+                                                {moment(q.date).format(
+                                                  "DD MMM, YYYY"
+                                                )}
+                                              </small>
+                                            </div>
                                           </div>
                                         </div>
+                                        <h5>{q.title}</h5>
+                                        <button
+                                          className="btn btn-primary btn-sm mb-3 mt-3"
+                                          onClick={() =>
+                                            handleConversationShow(q)
+                                          }
+                                        >
+                                          Join Conversation{" "}
+                                          <i className="fas fa-arrow-right"></i>
+                                        </button>
                                       </div>
-                                      <h5>How can i fix this bug?</h5>
-                                      <button className='btn btn-primary btn-sm mb-3 mt-3' onClick={handleConversationShow}>Join Conversation <i className='fas fa-arrow-right'></i></button>
-                                    </div>
+                                    ))}
 
                                   </div>
                                 </div>
@@ -475,151 +703,194 @@ function CourseDetail() {
 
 
       {/* Note Edit Modal */}
-      <Modal show={noteShow} size='lg' onHide={handleNoteClose}>
+      <Modal show={noteShow} size="lg" onHide={handleNoteClose}>
         <Modal.Header closeButton>
-          <Modal.Title>Note: Note Title</Modal.Title>
+          <Modal.Title>Note: {selectedNote?.title}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <form>
+          <form onSubmit={(e) => handleSubmitEditNote(e, selectedNote?.id)}>
             <div className="mb-3">
-              <label htmlFor="exampleInputEmail1" className="form-label">Note Title</label>
-              <input defaultValue={null} name='title' type="text" className="form-control" />
+              <label htmlFor="exampleInputEmail1" className="form-label">
+                Note Title
+              </label>
+              <input
+                defaultValue={selectedNote?.title}
+                name="title"
+                onChange={handleNoteChange}
+                type="text"
+                className="form-control"
+              />
             </div>
             <div className="mb-3">
-              <label htmlFor="exampleInputPassword1" className="form-label">Note Content</label>
-              <textarea onChange={null} defaultValue={null} name='note' className='form-control' cols="30" rows="10"></textarea>
+              <label htmlFor="exampleInputPassword1" className="form-label">
+                Note Content
+              </label>
+              <textarea
+                defaultValue={selectedNote?.note}
+                name="note"
+                onChange={handleNoteChange}
+                className="form-control"
+                cols="30"
+                rows="10"
+              ></textarea>
             </div>
-            <button type="button" className="btn btn-secondary me-2" onClick={null}><i className='fas fa-arrow-left'></i> Close</button>
-            <button type="submit" className="btn btn-primary">Save Note <i className='fas fa-check-circle'></i></button>
+            <button
+              type="button"
+              className="btn btn-secondary me-2"
+              onClick={handleNoteClose}
+            >
+              <i className="fas fa-arrow-left"></i> Close
+            </button>
+            <button type="submit" className="btn btn-primary">
+              Save Note <i className="fas fa-check-circle"></i>
+            </button>
           </form>
         </Modal.Body>
       </Modal>
 
-      {/* Note Edit Modal */}
-      <Modal show={ConversationShow} size='lg' onHide={handleConversationClose}>
+      {/* Conversation Modal */}
+      <Modal show={ConversationShow} size="lg" onHide={handleConversationClose}>
         <Modal.Header closeButton>
-          <Modal.Title>Lesson: 123</Modal.Title>
+          <Modal.Title>Lesson: {selectedConversation?.title}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div className="border p-2 p-sm-4 rounded-3">
-            <ul className="list-unstyled mb-0" style={{ overflowY: "scroll", height: "500px" }}>
-              <li className="comment-item mb-3">
-                <div className="d-flex">
-                  <div className="avatar avatar-sm flex-shrink-0">
-                    <a href="#">
-                      <img className="avatar-img rounded-circle" src="https://geeksui.codescandy.com/geeks/assets/images/avatar/avatar-3.jpg" style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }} alt="womans image" />
-                    </a>
-                  </div>
-                  <div className="ms-2">
-                    {/* Comment by */}
-                    <div className="bg-light p-3 rounded w-100">
-                      <div className="d-flex w-100 justify-content-center">
-                        <div className="me-2 ">
-                          <h6 className="mb-1 lead fw-bold">
-                            <a href="#!" className='text-decoration-none text-dark'> Louis Ferguson </a><br />
-                            <span style={{ fontSize: "12px", color: "gray" }}>5hrs Ago</span>
-                          </h6>
-                          <p className="mb-0 mt-3  ">Removed demands expense account
-                          </p>
+            <ul
+              className="list-unstyled mb-0"
+              style={{ overflowY: "scroll", height: "500px" }}
+            >
+              {selectedConversation?.messages?.map((m, index) => (
+                <li className="comment-item mb-3">
+                  <div className="d-flex">
+                    <div className="avatar avatar-sm flex-shrink-0">
+                      <a href="#">
+                        <img
+                          className="avatar-img rounded-circle"
+                          src={
+                            m.profile.image?.startsWith("http://127.0.0.1:8000")
+                              ? m.profile.image
+                              : `http://127.0.0.1:8000${m.profile.image}`
+                          }
+                          style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                          }}
+                          alt="womans image"
+                        />
+                      </a>
+                    </div>
+                    <div className="ms-2">
+                      {/* Comment by */}
+                      <div className="bg-light p-3 rounded w-100">
+                        <div className="d-flex w-100 justify-content-center">
+                          <div className="me-2 ">
+                            <h6 className="mb-1 lead fw-bold">
+                              <a
+                                href="#!"
+                                className="text-decoration-none text-dark"
+                              >
+                                {" "}
+                                {m.profile.full_name}{" "}
+                              </a>
+                              <br />
+                              <span style={{ fontSize: "12px", color: "gray" }}>
+                                {moment(m.date).format("DD MMM, YYYY")}
+                              </span>
+                            </h6>
+                            <p className="mb-0 mt-3  ">{m.message}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
-
                   </div>
-                </div>
-              </li>
+                </li>
+              ))}
 
-              <li className="comment-item mb-3">
-                <div className="d-flex">
-                  <div className="avatar avatar-sm flex-shrink-0">
-                    <a href="#">
-                      <img className="avatar-img rounded-circle" src="https://geeksui.codescandy.com/geeks/assets/images/avatar/avatar-3.jpg" style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }} alt="womans image" />
-                    </a>
-                  </div>
-                  <div className="ms-2">
-                    {/* Comment by */}
-                    <div className="bg-light p-3 rounded w-100">
-                      <div className="d-flex w-100 justify-content-center">
-                        <div className="me-2 ">
-                          <h6 className="mb-1 lead fw-bold">
-                            <a href="#!" className='text-decoration-none text-dark'> Louis Ferguson </a><br />
-                            <span style={{ fontSize: "12px", color: "gray" }}>5hrs Ago</span>
-                          </h6>
-                          <p className="mb-0 mt-3  ">Removed demands expense account from the debby building in a hall  town tak with
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-              </li>
-
-              <li className="comment-item mb-3">
-                <div className="d-flex">
-                  <div className="avatar avatar-sm flex-shrink-0">
-                    <a href="#">
-                      <img className="avatar-img rounded-circle" src="https://geeksui.codescandy.com/geeks/assets/images/avatar/avatar-3.jpg" style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }} alt="womans image" />
-                    </a>
-                  </div>
-                  <div className="ms-2">
-                    {/* Comment by */}
-                    <div className="bg-light p-3 rounded w-100">
-                      <div className="d-flex w-100 justify-content-center">
-                        <div className="me-2 ">
-                          <h6 className="mb-1 lead fw-bold">
-                            <a href="#!" className='text-decoration-none text-dark'> Louis Ferguson </a><br />
-                            <span style={{ fontSize: "12px", color: "gray" }}>5hrs Ago</span>
-                          </h6>
-                          <p className="mb-0 mt-3  ">Removed demands expense account
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-              </li>
-
-              <li className="comment-item mb-3">
-                <div className="d-flex">
-                  <div className="avatar avatar-sm flex-shrink-0">
-                    <a href="#">
-                      <img className="avatar-img rounded-circle" src="https://geeksui.codescandy.com/geeks/assets/images/avatar/avatar-3.jpg" style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }} alt="womans image" />
-                    </a>
-                  </div>
-                  <div className="ms-2">
-                    {/* Comment by */}
-                    <div className="bg-light p-3 rounded w-100">
-                      <div className="d-flex w-100 justify-content-center">
-                        <div className="me-2 ">
-                          <h6 className="mb-1 lead fw-bold">
-                            <a href="#!" className='text-decoration-none text-dark'> Louis Ferguson </a><br />
-                            <span style={{ fontSize: "12px", color: "gray" }}>5hrs Ago</span>
-                          </h6>
-                          <p className="mb-0 mt-3  ">Removed demands expense account
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-              </li>
+              <div ref={lastElementRef}></div>
             </ul>
 
-            <form class="w-100 d-flex">
-              <textarea name='message' class="one form-control pe-4 bg-light w-75" id="autoheighttextarea" rows="2" placeholder="What's your question?"></textarea>
-              <button class="btn btn-primary ms-2 mb-0 w-25" type="button">Post <i className='fas fa-paper-plane'></i></button>
+            <form class="w-100 d-flex" onSubmit={sendNewMessage}>
+              <textarea
+                name="message"
+                class="one form-control pe-4 bg-light w-75"
+                id="autoheighttextarea"
+                rows="2"
+                onChange={handleMessageChange}
+                placeholder="What's your question?"
+              ></textarea>
+              <button class="btn btn-primary ms-2 mb-0 w-25" type="submit">
+                Post <i className="fas fa-paper-plane"></i>
+              </button>
             </form>
 
-            <form class="w-100">
-              <input name='title' type="text" className="form-control mb-2" placeholder='Question Title' />
-              <textarea name='message' class="one form-control pe-4 mb-2 bg-light" id="autoheighttextarea" rows="5" placeholder="What's your question?"></textarea>
-              <button class="btn btn-primary mb-0 w-25" type="button">Post <i className='fas fa-paper-plane'></i></button>
-            </form>
-
+            {/* <form class="w-100">
+              <input
+                name="title"
+                type="text"
+                className="form-control mb-2"
+                placeholder="Question Title"
+              />
+              <textarea
+                name="message"
+                class="one form-control pe-4 mb-2 bg-light"
+                id="autoheighttextarea"
+                rows="5"
+                placeholder="What's your question?"
+              ></textarea>
+              <button class="btn btn-primary mb-0 w-25" type="button">
+                Post <i className="fas fa-paper-plane"></i>
+              </button>
+            </form> */}
           </div>
+        </Modal.Body>
+      </Modal>
+
+      {/* Ask Question Modal */}
+      {/* Note Edit Modal */}
+      <Modal show={addQuestionShow} size="lg" onHide={handleQuestionClose}>
+        <Modal.Header closeButton>
+          <Modal.Title>Ask Question</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <form onSubmit={handleSaveQuestion}>
+            <div className="mb-3">
+              <label htmlFor="exampleInputEmail1" className="form-label">
+                Question Title
+              </label>
+              <input
+                value={createMessage.title}
+                name="title"
+                onChange={handleMessageChange}
+                type="text"
+                className="form-control"
+              />
+            </div>
+            <div className="mb-3">
+              <label htmlFor="exampleInputPassword1" className="form-label">
+                Question Message
+              </label>
+              <textarea
+                value={createMessage.message}
+                name="message"
+                onChange={handleMessageChange}
+                className="form-control"
+                cols="30"
+                rows="10"
+              ></textarea>
+            </div>
+            <button
+              type="button"
+              className="btn btn-secondary me-2"
+              onClick={handleQuestionClose}
+            >
+              <i className="fas fa-arrow-left"></i> Close
+            </button>
+            <button type="submit" className="btn btn-primary">
+              Send Message <i className="fas fa-check-circle"></i>
+            </button>
+          </form>
         </Modal.Body>
       </Modal>
 
