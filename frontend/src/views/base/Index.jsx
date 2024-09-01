@@ -83,6 +83,23 @@ function Index() {
   );
 
 
+  const addToWishlist = (courseId) => {
+    const formdata = new FormData();
+    formdata.append("user_id", UserData()?.user_id);
+    formdata.append("course_id", courseId);
+
+    useAxios()
+      .post(`student/wishlist/${UserData()?.user_id}/`, formdata)
+      .then((res) => {
+        console.log(res.data);
+        Toast().fire({
+          icon: "success",
+          title: res.data.message,
+        });
+      });
+  };
+
+
   return (
     <>
       <BaseHeader />
@@ -238,7 +255,7 @@ function Index() {
                               {c.language}
                             </span>
                           </div>
-                          <a href="#" className="fs-5">
+                          <a onClick={() => addToWishlist(c.id)} className="fs-5">
                             <i className="fas fa-heart text-danger align-middle" />
                           </a>
                         </div>

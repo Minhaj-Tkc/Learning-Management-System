@@ -86,7 +86,7 @@ function ChangePassword() {
                           id="password"
                           className="form-control"
                           placeholder="**************"
-                          required=""
+                          required
                           name="old_password"
                           value={password.old_password}
                           onChange={handlePasswordChange}
@@ -102,7 +102,7 @@ function ChangePassword() {
                           id="password"
                           className="form-control"
                           placeholder="**************"
-                          required=""
+                          required
                           name="new_password"
                           value={password.new_passowrd}
                           onChange={handlePasswordChange}
@@ -119,7 +119,7 @@ function ChangePassword() {
                           id="password"
                           className="form-control"
                           placeholder="**************"
-                          required=""
+                          required
                           name="confirm_new_password"
                           value={password.confirm_new_password}
                           onChange={handlePasswordChange}
