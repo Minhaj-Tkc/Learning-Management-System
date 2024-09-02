@@ -31,6 +31,7 @@ function Index() {
         .then((res) => {
           setCourses(res.data);
           setIsLoading(false);
+          
         });
     } catch (error) {
       console.log(error);
@@ -71,7 +72,7 @@ function Index() {
   };
 
   // Pagination
-  const itemsPerPage = 1;
+  const itemsPerPage = 4;
   const [currentPage, setCurrentPage] = useState(1);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -269,7 +270,7 @@ function Index() {
                         </h4>
                         <small>By: {c.teacher.full_name}</small> <br />
                         <small>
-                          {c.students?.length} Student{" "}
+                          {c.students?.length} Student{""}
                           {c.students?.length > 1 && "s"}
                         </small>{" "}
                         <br />
@@ -279,7 +280,7 @@ function Index() {
                               <Rater total={5} rating={c.average_rating || 0} />
                             </span>
                           </span>
-                          <span className="text-warning">4.5</span>
+                          <span className="text-warning ps-2">4.5</span>
                           <span className="fs-6 ms-2">
                             ({c.review?.length} Reviews )
                           </span>

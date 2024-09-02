@@ -26,10 +26,13 @@ function Wishlist() {
           .then((res) => {
             console.log(res.data);
             setWishlist(res.data);
+            
+
           });
       };
 
       const country = GetCurrentAddress()?.country;
+      
     
       useEffect(() => {
         fetchWishlist();
@@ -148,7 +151,7 @@ function Wishlist() {
                             <small>By: {w.course?.teacher?.full_name}</small>{" "}
                             <br />
                             <small>
-                              {w.course.students?.length} Student
+                              {w.course.students?.length || 0} Student
                               {w.course.students?.length > 1 && "s"}
                             </small>{" "}
                             <br />
@@ -161,7 +164,7 @@ function Wishlist() {
                                   />
                                 </span>
                               </span>
-                              <span className="text-warning">4.5</span>
+                              <span className="text-warning ps-2">4.5</span>
                               <span className="fs-6 ms-2">
                                 ({w.course.reviews?.length} Reviews)
                               </span>
