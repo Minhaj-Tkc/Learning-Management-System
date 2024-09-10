@@ -26,6 +26,21 @@ import useAxios from "./utils/useAxios";
 import UserData from "./views/plugin/UserData";
 import StudentChangePassword from "./views/student/ChangePassword";
 
+import Dashboard from "./views/instructor/Dashboard";
+import Courses from "./views/instructor/Courses";
+import Review from "./views/instructor/Review";
+import Students from "./views/instructor/Students";
+import Earning from "./views/instructor/Earning";
+import Orders from "./views/instructor/Orders";
+import Coupon from "./views/instructor/Coupon";
+import TeacherNotification from "./views/instructor/TeacherNotification";
+import QA from "./views/instructor/QA";
+import ChangePassword from "./views/instructor/ChangePassword";
+import Profile from "./views/instructor/Profile";
+
+// import CourseCreate from "./views/instructor/CourseCreate";
+// import CourseEdit from "./views/instructor/CourseEdit";
+
 import { CartContext, ProfileContext } from "./views/plugin/Context";
 import apiInstance from "./utils/axios";
 import CartId from "./views/plugin/CartId";
@@ -88,6 +103,21 @@ function App() {
                   path="/student/change-password/"
                   element={<StudentChangePassword />}
                 />
+
+                {/* Teacher Routes */}
+              <Route path="/instructor/dashboard/" element={<Dashboard />} />
+              <Route path="/instructor/courses/" element={<Courses />} />
+              <Route path="/instructor/reviews/" element={<Review />} />
+              <Route path="/instructor/students/" element={<Students />} />
+              <Route path="/instructor/earning/" element={<Earning />} />
+              <Route path="/instructor/orders/" element={<Orders />} />
+              <Route path="/instructor/coupon/" element={<Coupon />} />
+              <Route path="/instructor/notifications/" element={<TeacherNotification />} />
+              <Route path="/instructor/question-answer/" element={<QA />} />
+              <Route path="/instructor/change-password/" element={<ChangePassword />} />
+              <Route path="/instructor/profile/" element={<Profile />} />
+              {/* <Route path="/instructor/create-course/" element={<CourseCreate />} /> */}
+              {/* <Route path="/instructor/edit-course/:course_id/" element={<CourseEdit />} /> */}
 
             </Routes>
           </MainWrapper>
