@@ -38,8 +38,8 @@ import QA from "./views/instructor/QA";
 import ChangePassword from "./views/instructor/ChangePassword";
 import Profile from "./views/instructor/Profile";
 
-// import CourseCreate from "./views/instructor/CourseCreate";
-// import CourseEdit from "./views/instructor/CourseEdit";
+import CourseCreate from "./views/instructor/CourseCreate";
+import CourseEdit from "./views/instructor/CourseEdit";
 
 import { CartContext, ProfileContext } from "./views/plugin/Context";
 import apiInstance from "./utils/axios";
@@ -116,8 +116,8 @@ function App() {
               <Route path="/instructor/question-answer/" element={<QA />} />
               <Route path="/instructor/change-password/" element={<ChangePassword />} />
               <Route path="/instructor/profile/" element={<Profile />} />
-              {/* <Route path="/instructor/create-course/" element={<CourseCreate />} /> */}
-              {/* <Route path="/instructor/edit-course/:course_id/" element={<CourseEdit />} /> */}
+              <Route path="/instructor/create-course/" element={<CourseCreate />} />
+              <Route path="/instructor/edit-course/:course_id/" element={<CourseEdit />} />
 
             </Routes>
           </MainWrapper>
