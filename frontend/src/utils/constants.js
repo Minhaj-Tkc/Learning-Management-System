@@ -5,4 +5,4 @@ export const userId = UserData()?.user_id;
 
 export const PAYPAL_CLIENT_ID = "AQudwkDUQIc2oHKfei02hbb_qDvhZK1Ewf9vnaz2zjXDVO44L6MJBpmvE1HhBSZon1warSqLnmUWRHaC";
 
-// export const teacherId = UserData()?.teacher_id; 
+export const teacherId = UserData()?.teacher_id; 

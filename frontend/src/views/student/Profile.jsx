@@ -78,6 +78,12 @@ function Profile() {
         },
       })
       .then((res) => {
+
+        Toast().fire({
+          title: "Profile Updated",
+          icon: "success",
+        });
+
         console.log(res.data);
         setProfile(res.data);
       });

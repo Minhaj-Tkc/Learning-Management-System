@@ -61,7 +61,7 @@ function Login() {
                       className="form-control"
                       name="email"
                       placeholder="johndoe@gmail.com"
-                      required=""
+                      required
                       onChange={(e) => setEmail(e.target.value)}
                     />
                     <div className="invalid-feedback">
@@ -79,7 +79,7 @@ function Login() {
                       className="form-control"
                       name="password"
                       placeholder="**************"
-                      required=""
+                      required
                       onChange={(e) => setPassword(e.target.value)}
                     />
                     <div className="invalid-feedback">
